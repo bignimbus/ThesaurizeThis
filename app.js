@@ -1,78 +1,13 @@
 require('dotenv').config();
 
-const Snoowrap = require('snoowrap');
-const Snoostorm = require('snoostorm');
 const thesaurus = require('thesaurus');
 const pluralize = require('pluralize');
 
-const globalCallWord = "!thesaurizethis";
-const fandango = "!dothefandango";
 const commonArr =["the","of","and","a","to","in","is","you","that","it","he","was","for","on","are","as","with","his","they","I","at","be","this","have","from","or","one","had","by","word","but","not","what","all","were","we","when","your","can","said","there","use","an","each","which","she","do","how","their","if","will","up","about","out","many","then","them","these","so","some","her","would","make","like","him","into","time","has","look","two","more","go","see","no","way","could","my","than","been","call","who","its","now","did","get","come","made","may","part","i","me","his"];
 
-
-// Build Snoowrap and Snoostorm clients
-const r = new Snoowrap({
-    userAgent: 'thesaurize-this',
-    clientId: process.env.CLIENT_ID,
-    clientSecret: process.env.CLIENT_SECRET,
-    username: process.env.REDDIT_USER,
-    password: process.env.REDDIT_PASS
-});
-const client = new Snoostorm(r);
-
-// Configure options for stream: subreddit & results per query
-const streamOpts = {
-    subreddit: 'all',
-    results: 200,
-    pollTime: 2500
-};
-  
-// Create a Snoostorm CommentStream with the specified options
-const comments = client.CommentStream(streamOpts);
-
-// On comment, perform whatever logic you want to do
-comments.on('comment', async (comment) => {
-
-    if (containsCallWord(comment, globalCallWord)){
-        let parentComment = await r.getComment(comment.parent_id).body;
-        if(parentComment){
-            processComment(comment, parentComment);
-        }
-    
-    } else if(comment.subreddit_name_prefixed === "r/ThesaurizeThis" && comment.author.name !== "ThesaurizeThisBot"){
-        processComment(comment, false);
-    }
-});
-
-function processComment(comment, parentComment){
-    let commentToProcess = parentComment ? parentComment : comment.body;
-    commentToProcess = commentToProcess.split(subScript())[0];
-    let insanity = thesaurize(commentToProcess);
-    if(containsCallWord(comment, fandango)){
-        for(let i = 0; i < 10; i++){
-            insanity = thesaurize(insanity);
-        }
-    }
-    console.log("~~~~~~~~~~~~~");
-    console.log(comment.subreddit_name_prefixed);
-    console.log(insanity);
-    if(inBannedSub(comment.subreddit_name_prefixed)){
-        bannedReply(insanity, comment.author.name, comment.subreddit_name_prefixed, comment.link_permalink);
-    } else {
-        comment.reply(insanity + subScript());
-    }
-}
-
-function containsCallWord(comment, callWord){
-    return comment.body.toLowerCase().includes(callWord);
-}
-  
 function thesaurize(comment){
     let wordArr = comment.split(' ');
     let insanity = wordArr.map(word => {
-        if(word.toLocaleLowerCase().includes(globalCallWord)){
-            return "ThesaurizeThisBot is the bestest ever";
-        }
         let punctuation;
         let isPlural = false;
         let split = splitPunctuation(word);
@@ -156,68 +91,6 @@ function isLetter(c) {
 
 function jsUcfirst(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
-}
-
-function inBannedSub(subName){
-    let bannedSubs = [
-        "r/politics",
-        "r/gaming",
-        "r/askreddit",
-        "r/furry",
-        "r/memes",
-        "r/dankmemes",
-        "r/blackpeopletwitter",
-        "r/programmerhumor",
-        "r/worldbuilding",
-        "r/onewordban",
-        "r/creepypms",
-        "r/politicalhumor",
-        "r/circlejerk",
-        "r/emojipasta",
-        "r/peoplefuckingdying",
-        "r/sex",
-        "r/legaladvice",
-        "r/writingprompts",
-        "r/explainlikeimfive",
-        "r/competitiveoverwatch",
-        "r/wtf",
-        "r/talesfromtechsupport",
-        "r/youtubehaiku",
-        "r/magictcg",
-        "r/mma",
-        "r/wholesomememes",
-        "r/nfl",
-        "r/chapotraphouse",
-        "r/rainbow6",
-        "r/casualuk",
-        "r/walkingwarrobots",
-        "r/dogswithjobs",
-        "r/todayilearned",
-        "r/pcmasterrace",
-        "r/fortnitebr",
-        "r/pics",
-        "r/tattoos",
-        "r/aww",
-        "r/nottheonion",
-        "r/animalsbeingbros",
-        "r/jokes",
-        "r/nascar",
-        "r/gamingcirclejerk",
-        "r/drugs",
-        "r/pewdiepiesubmissions",
-        "r/fortnite",
-        "r/murderedbywords",
-        "r/chibears",
-        "r/pointlessstories",
-        "r/codzombies"
-    ];
-    
-    return bannedSubs.includes(subName.toLowerCase());
-}
-
-function bannedReply(insanity, user, subreddit, commentLink){
-    let appendedResponse = `Paging u/${user}. [You called](${commentLink}), unfortunately I am banned in ${subreddit} so here is your translated text: \n\n ${insanity}`;
-    r.getSubmission('9y3efk').reply(appendedResponse + subScript());
 }
 
 function trimLongComment(comment){
@@ -415,3 +288,5 @@ YUGE Liar
 Zen Master of Hate`.split("\n");
     return trumpNames[Math.floor(Math.random()*trumpNames.length)]
 }
+
+module.exports = thesaurize;

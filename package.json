@@ -11,5 +11,8 @@
     "snoostorm": "0.0.5",
     "snoowrap": "^1.15.2",
     "thesaurus": "0.0.0"
+  },
+  "bin": {
+    "thesaurize": "bin/thesaurize"
   }
 }
